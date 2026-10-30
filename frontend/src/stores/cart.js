@@ -1,8 +1,44 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 export const useCartStore = defineStore('cart', () => {
-  const items = ref([])
+  const items = ref(loadCart())
+
+function loadCart() {
+  try {
+    const savedCart = localStorage.getItem('clothing-store-cart')
+    const parsed = savedCart ? JSON.parse(savedCart) : []
+
+    if (!Array.isArray(parsed)) return []
+
+    return parsed.filter(
+      (item) =>
+        item !== null &&
+        typeof item === 'object' &&
+        Number.isInteger(item.id) &&
+        typeof item.name === 'string' &&
+        typeof item.category === 'string' &&
+        Number.isFinite(item.price) &&
+        item.price >= 0 &&
+        Number.isInteger(item.quantity) &&
+        item.quantity > 0,
+    )
+  } catch {
+    return []
+  }
+}
+
+watch(
+  items,
+  (updatedItems) => {
+    try {
+      localStorage.setItem('clothing-store-cart', JSON.stringify(updatedItems))
+    } catch {
+      console.warn('Unable to save the cart in this browser.')
+    }
+  },
+  { deep: true },
+)
 
   const itemCount = computed(() =>
     items.value.reduce((count, item) => count + item.quantity, 0),
