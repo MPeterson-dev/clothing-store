@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-
+import { useCartStore } from './stores/cart.js'
 
 // ref = Reactive values: Vue updates the page when these change.
 const products = ref([])
@@ -8,6 +8,7 @@ const loading = ref(true)
 const error = ref('')
 const selectedCategory = ref('All')
 const searchQuery = ref('')
+const cart = useCartStore()
 
 const categories = computed(() => [ 
   'All', 
@@ -60,7 +61,6 @@ onMounted(async () => {
 />
 <label for="category">Filter by category:</label>
     <select id="category" v-model="selectedCategory">
-      const
       <option v-for="category in categories" :key="category" :value="category">
         {{ category }}
       </option>
@@ -77,8 +77,44 @@ onMounted(async () => {
         <h2>{{ product.name }}</h2>
         <p>{{ product.category }}</p>
         <p>${{ product.price.toFixed(2) }}</p>
+        <button type="button" @click="cart.addItem(product)">
+          Add to Cart
+        </button>
       </li>
     </ul>
+    <section>
+  <h2>Shopping cart ({{ cart.itemCount }})</h2>
+
+  <p v-if="cart.items.length === 0">Your cart is empty.</p>
+
+  <ul v-else>
+    <li v-for="item in cart.items" :key="item.id">
+      <h3>{{ item.name }}</h3>
+      <p>${{ item.price.toFixed(2) }} each</p>
+      <p>Quantity: {{ item.quantity }}</p>
+
+      <button
+        type="button"
+        :aria-label="`Decrease quantity of ${item.name}`"
+        @click="cart.decreaseQuantity(item.id)"
+      >
+        −
+      </button>
+      <button
+        type="button"
+        :aria-label="`Increase quantity of ${item.name}`"
+        @click="cart.addItem(item)"
+      >
+        +
+      </button>
+      <button type="button" @click="cart.removeItem(item.id)">
+        Remove
+      </button>
+    </li>
+  </ul>
+
+  <p><strong>Total: ${{ cart.total.toFixed(2) }}</strong></p>
+</section>
   </main>
 </template>
 
