@@ -1,0 +1,13 @@
+# Dependencies and build outputs
+node_modules/
+dist/
+bin/
+obj/
+
+# Local IDE files
+.vs/
+
+# Local secrets
+.env
+.env.*
+!.env.example
