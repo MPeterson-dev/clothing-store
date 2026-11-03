@@ -49,7 +49,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main>
+  <main class="container py-5">
     <h1>Store Title here</h1>
     <p>Find your everyday favorites.</p>
 <label for="search">Search products:</label>
@@ -69,32 +69,37 @@ onMounted(async () => {
     <p v-if="loading">Loading products...</p>
     <p v-else-if="error" role="alert">{{ error }}</p>
 
-    <ul v-else>
-      <li v-if="filteredProducts.length === 0">
-        No products match your search.
-      </li>
-      <li v-for="product in filteredProducts" :key="product.id">
-        <h2>{{ product.name }}</h2>
-        <p>{{ product.category }}</p>
-        <p>${{ product.price.toFixed(2) }}</p>
-        <button type="button" @click="cart.addItem(product)">
+    <ul v-else class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 list-unstyled">
+  <li v-if="filteredProducts.length === 0" class="col-12">
+    No products match your search.
+  </li>
+
+  <li v-for="product in filteredProducts" :key="product.id" class="col">
+    <article class="card h-100 shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 card-title">{{ product.name }}</h2>
+        <p class="text-muted">{{ product.category }}</p>
+        <p class="fw-bold">${{ product.price.toFixed(2) }}</p>
+        <button type="button" class="btn btn-dark" @click="cart.addItem(product)">
           Add to Cart
         </button>
-      </li>
-    </ul>
-    <section>
-  <h2>Shopping cart ({{ cart.itemCount }})</h2>
+      </div>
+    </article>
+  </li>
+</ul>
+    <section class="mt-5">
+  <h2 class="h4">Shopping cart ({{ cart.itemCount }})</h2>
 
   <p v-if="cart.items.length === 0">Your cart is empty.</p>
 
-  <ul v-else>
-    <li v-for="item in cart.items" :key="item.id">
-      <h3>{{ item.name }}</h3>
-      <p>${{ item.price.toFixed(2) }} each</p>
-      <p>Quantity: {{ item.quantity }}</p>
+  <ul v-else class="list-group mb-3">
+    <li v-for="item in cart.items" :key="item.id" class="list-group-item">
+      <h3 class="h6">{{ item.name }}</h3>
+      <p>${{ item.price.toFixed(2) }} each · Quantity: {{ item.quantity }}</p>
 
       <button
         type="button"
+        class="btn btn-outline-secondary btn-sm me-2"
         :aria-label="`Decrease quantity of ${item.name}`"
         @click="cart.decreaseQuantity(item.id)"
       >
@@ -102,12 +107,17 @@ onMounted(async () => {
       </button>
       <button
         type="button"
+        class="btn btn-outline-secondary btn-sm me-2"
         :aria-label="`Increase quantity of ${item.name}`"
         @click="cart.addItem(item)"
       >
         +
       </button>
-      <button type="button" @click="cart.removeItem(item.id)">
+      <button
+        type="button"
+        class="btn btn-outline-danger btn-sm"
+        @click="cart.removeItem(item.id)"
+      >
         Remove
       </button>
     </li>
@@ -117,27 +127,3 @@ onMounted(async () => {
 </section>
   </main>
 </template>
-
-<style scoped>
-main {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-family: Arial, sans-serif;
-}
-
-ul {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  padding: 0;
-  list-style: none;
-}
-
-li {
-  padding: 1.5rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-</style>
-
