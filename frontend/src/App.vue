@@ -9,6 +9,7 @@ const error = ref('')
 const selectedCategory = ref('All')
 const searchQuery = ref('')
 const cart = useCartStore()
+const selections = ref({})
 
 const categories = computed(() => [ 
   'All', 
@@ -40,11 +41,18 @@ onMounted(async () => {
     }
 
     products.value = await response.json()
-  } catch {
-    error.value = 'Could not load products. Please try again later.'
-  } finally {
-    loading.value = false
-  }
+    } catch {
+      error.value = 'Could not load products. Please try again later.'
+    } finally {
+      loading.value = false
+    }
+
+    selections.value = Object.fromEntries(
+  products.value.map((product) => [
+    product.id,
+    { size: product.sizes[0], color: product.colors[0] },
+  ]),
+)
 })
 </script>
 
@@ -86,9 +94,35 @@ onMounted(async () => {
               <h2 class="h5 card-title">{{ product.name }}</h2>
               <p class="text-muted">{{ product.category }}</p>
               <p class="fw-bold">${{ product.price.toFixed(2) }}</p>
-              <button type="button" class="btn btn-dark" @click="cart.addItem(product)">
-                Add to Cart
-              </button>
+              <label :for="`size-${product.id}`" class="form-label">Size</label>
+<select
+  :id="`size-${product.id}`"
+  v-model="selections[product.id].size"
+  class="form-select mb-2"
+>
+  <option v-for="size in product.sizes" :key="size" :value="size">
+    {{ size }}
+  </option>
+</select>
+
+<label :for="`color-${product.id}`" class="form-label">Color</label>
+<select
+  :id="`color-${product.id}`"
+  v-model="selections[product.id].color"
+  class="form-select mb-3"
+>
+  <option v-for="color in product.colors" :key="color" :value="color">
+    {{ color }}
+  </option>
+</select>
+
+<button
+  type="button"
+  class="btn btn-dark"
+  @click="cart.addItem({ ...product, ...selections[product.id] })"
+>
+  Add to Cart
+</button>
             </div>
           </article>
         </li>
@@ -99,33 +133,34 @@ onMounted(async () => {
     <p v-if="cart.items.length === 0">Your cart is empty.</p>
 
     <ul v-else class="list-group mb-3">
-      <li v-for="item in cart.items" :key="item.id" class="list-group-item">
+      <li v-for="item in cart.items" :key="item.variantKey" class="list-group-item">
         <h3 class="h6">{{ item.name }}</h3>
+        <p>{{ item.size }} · {{ item.color }}</p>
         <p>${{ item.price.toFixed(2) }} each · Quantity: {{ item.quantity }}</p>
 
         <button
           type="button"
           class="btn btn-outline-secondary btn-sm me-2"
-          :aria-label="`Decrease quantity of ${item.name}`"
-          @click="cart.decreaseQuantity(item.id)"
+          :aria-label="`Decrease quantity of ${item.name}, size ${item.size}, ${item.color}`"
+          @click="cart.decreaseQuantity(item.variantKey)"
         >
           −
         </button>
         <button
           type="button"
           class="btn btn-outline-secondary btn-sm me-2"
-          :aria-label="`Increase quantity of ${item.name}`"
+          :aria-label="`Increase quantity of ${item.name}, size ${item.size}, ${item.color}`"
           @click="cart.addItem(item)"
         >
           +
-        </button>
-        <button
-          type="button"
-          class="btn btn-outline-danger btn-sm"
-          @click="cart.removeItem(item.id)"
-        >
-          Remove
-        </button>
+      </button>
+      <button
+  type="button"
+  class="btn btn-outline-danger btn-sm"
+  @click="cart.removeItem(item.variantKey)"
+>
+  Remove
+</button>
       </li>
     </ul>
 

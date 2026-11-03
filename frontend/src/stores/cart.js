@@ -21,7 +21,10 @@ function loadCart() {
         Number.isFinite(item.price) &&
         item.price >= 0 &&
         Number.isInteger(item.quantity) &&
-        item.quantity > 0,
+        item.quantity > 0 &&
+        typeof item.variantKey === 'string' &&
+        typeof item.size === 'string' &&
+        typeof item.color === 'string'
     )
   } catch {
     return []
@@ -49,30 +52,30 @@ watch(
   )
 
   function addItem(product) {
-    const existingItem = items.value.find((item) => item.id === product.id)
+  const variantKey = JSON.stringify([product.id, product.size, product.color])
+  const existingItem = items.value.find((item) => item.variantKey === variantKey)
 
-    if (existingItem) {
-      existingItem.quantity++
-    } else {
-      items.value.push({ ...product, quantity: 1 })
-    }
+  if (existingItem) {
+    existingItem.quantity++
+  } else {
+    items.value.push({ ...product, variantKey, quantity: 1 })
   }
+}
 
-  function removeItem(productId) {
-    items.value = items.value.filter((item) => item.id !== productId)
+function removeItem(variantKey) {
+  items.value = items.value.filter((item) => item.variantKey !== variantKey)
+}
+
+function decreaseQuantity(variantKey) {
+  const item = items.value.find((item) => item.variantKey === variantKey)
+  if (!item) return
+
+  if (item.quantity > 1) {
+    item.quantity--
+  } else {
+    removeItem(variantKey)
   }
-
-  function decreaseQuantity(productId) {
-    const item = items.value.find((item) => item.id === productId)
-
-    if (!item) return
-
-    if (item.quantity > 1) {
-      item.quantity--
-    } else {
-      removeItem(productId)
-    }
-  }
+}
 
   return {
     items,
