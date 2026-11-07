@@ -11,6 +11,45 @@ const searchQuery = ref('')
 const cart = useCartStore()
 const selections = ref({})
 
+const checkingOut = ref(false)
+const checkoutError = ref('')
+const confirmation = ref(null)
+
+async function checkout() {
+  if (checkingOut.value || cart.items.length === 0) return
+
+  checkingOut.value = true
+  checkoutError.value = ''
+  confirmation.value = null
+
+  try {
+    const response = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: cart.items.map(({ id, size, color, quantity }) => ({
+          productId: id,
+          size,
+          color,
+          quantity,
+        })),
+      }),
+    })
+
+    const result = await response.json()
+    if (!response.ok) {
+      checkoutError.value = result.message ?? 'Checkout failed. Please try again.'
+      return
+    }
+
+    confirmation.value = result
+  } catch {
+    checkoutError.value = 'Could not complete checkout. Make sure the API is running.'
+  } finally {
+    checkingOut.value = false
+  }
+}
+
 const categories = computed(() => [
   'All',
   ...new Set(products.value.map((product) => product.category)),
@@ -58,7 +97,6 @@ onMounted(async () => {
 <template>
   <main class="container py-5">
     <h1>Store Title here</h1>
-    <p>Find your everyday favorites.</p>
     <div class="row g-3 mb-4">
       <div class="col-12 col-md-8">
         <label for="search" class="form-label">Search products</label>
@@ -67,7 +105,7 @@ onMounted(async () => {
           v-model="searchQuery"
           type="search"
           class="form-control"
-          placeholder="Search clothing..."
+          placeholder="Search"
         />
       </div>
 
@@ -164,6 +202,25 @@ onMounted(async () => {
       <p>
         <strong>Total: ${{ cart.total.toFixed(2) }}</strong>
       </p>
+
+      <button
+        type="button"
+        class="btn btn-dark"
+        :disabled="checkingOut || cart.items.length === 0"
+        @click="checkout"
+      >
+        {{ checkingOut ? 'Checking out…' : 'Demo checkout' }}
+      </button>
+
+      <p v-if="checkoutError" class="text-danger mt-3" role="alert">
+        {{ checkoutError }}
+      </p>
+
+      <div v-if="confirmation" class="alert alert-success mt-3" role="status">
+        <strong>Demo checkout complete: ${{ confirmation.total.toFixed(2) }}</strong>
+        <div>Confirmation: {{ confirmation.confirmationId }}</div>
+        <div>No payment was taken.</div>
+      </div>
     </section>
   </main>
 </template>

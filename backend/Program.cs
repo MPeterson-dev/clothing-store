@@ -32,6 +32,32 @@ app.MapGet("/api/products", () =>
 })
 .WithName("GetProducts"); // Give this endpoint a unique internal name.
 
+app.MapPost("/api/checkout", (CheckoutRequest request) =>
+{
+    if (request.Items is not { Length: > 0 })
+        return Results.BadRequest(new { message = "Your cart is empty." });
+
+    decimal total = 0;
+
+    foreach (var item in request.Items)
+    {
+        if (item is null || item.Quantity is < 1 or > 99)
+            return Results.BadRequest(new { message = "Quantity must be between 1 and 99." });
+
+        var product = products.Find(product => product.Id == item.ProductId);
+
+        if (product is null)
+            return Results.BadRequest(new { message = "A product is no longer available." });
+
+        if (!product.Sizes.Contains(item.Size) || !product.Colors.Contains(item.Color))
+            return Results.BadRequest(new { message = $"Invalid size or color for {product.Name}." });
+
+        total += product.Price * item.Quantity;
+    }
+
+    return Results.Ok(new { confirmationId = Guid.NewGuid(), total });
+});
+
 app.Run();
 
 // Define the "Product" data structure
@@ -43,3 +69,6 @@ record Product(
     string[] Sizes,
     string[] Colors
 );
+
+record CheckoutRequest(CheckoutItem?[]? Items);
+record CheckoutItem(int ProductId, string Size, string Color, int Quantity);
